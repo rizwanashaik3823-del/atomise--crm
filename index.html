@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Atomise CRM</title>
+  <style>
+    body {
+      font-family: Arial;
+      background: #0f172a;
+      color: white;
+      margin: 0;
+    }
+
+    h1 {
+      text-align: center;
+      background: #1e293b;
+      padding: 15px;
+    }
+
+    .container {
+      padding: 20px;
+    }
+
+    input, button {
+      padding: 10px;
+      margin: 5px;
+      border-radius: 5px;
+      border: none;
+    }
+
+    button {
+      background: purple;
+      color: white;
+      cursor: pointer;
+    }
+
+    .card {
+      background: #1e293b;
+      padding: 10px;
+      margin: 10px 0;
+      border-radius: 8px;
+    }
+
+    .pipeline {
+      display: flex;
+      gap: 10px;
+      overflow-x: auto;
+    }
+
+    .column {
+      background: #1e293b;
+      padding: 10px;
+      min-width: 200px;
+      border-radius: 10px;
+    }
+
+    .deal {
+      background: #334155;
+      padding: 8px;
+      margin: 5px 0;
+      border-radius: 6px;
+    }
+  </style>
+</head>
+
+<body>
+
+<h1>Atomise CRM</h1>
+
+<div class="container">
+
+  <!-- CONTACTS -->
+  <h2>Add Contact</h2>
+  <input id="name" placeholder="Name">
+  <input id="email" placeholder="Email">
+  <button onclick="addContact()">Add</button>
+
+  <h2>Contacts</h2>
+  <div id="contactList"></div>
+
+  <!-- PIPELINE -->
+  <h2>Deal Pipeline</h2>
+  <input id="dealName" placeholder="Deal Name">
+  <button onclick="addDeal()">Add Deal</button>
+
+  <div class="pipeline">
+    <div class="column"><h3>Lead</h3><div id="Lead"></div></div>
+    <div class="column"><h3>Qualified</h3><div id="Qualified"></div></div>
+    <div class="column"><h3>Proposal</h3><div id="Proposal"></div></div>
+    <div class="column"><h3>Negotiation</h3><div id="Negotiation"></div></div>
+    <div class="column"><h3>Closed</h3><div id="Closed"></div></div>
+  </div>
+
+</div>
+
+<script>
+  let contacts = [];
+  let deals = [];
+
+  function addContact() {
+    let name = document.getElementById('name').value;
+    let email = document.getElementById('email').value;
+
+    contacts.push({ name, email });
+    renderContacts();
+  }
+
+  function renderContacts() {
+    let list = document.getElementById('contactList');
+    list.innerHTML = "";
+
+    contacts.forEach(c => {
+      list.innerHTML += `<div class="card">${c.name} - ${c.email}</div>`;
+    });
+  }
+
+  function addDeal() {
+    let name = document.getElementById('dealName').value;
+
+    deals.push({ name, stage: "Lead" });
+    renderDeals();
+  }
+
+  function renderDeals() {
+    ["Lead","Qualified","Proposal","Negotiation","Closed"].forEach(stage => {
+      document.getElementById(stage).innerHTML = "";
+    });
+
+    deals.forEach(d => {
+      let el = `<div class="deal">${d.name}</div>`;
+      document.getElementById(d.stage).innerHTML += el;
+    });
+  }
+</script>
+
+</body>
+</html>
