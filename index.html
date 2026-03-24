@@ -92,88 +92,103 @@
 
 </div>
 
-<!-- SUPABASE SCRIPT -->
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js"></script>
 <script>
-  // ✅ Supabase credentials
+  // ✅ Supabase REST info
   const SUPABASE_URL = "https://navwmcgyspmkaedpxmmp.supabase.co";
   const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5hdndtY2d5c3Bta2FlZHB4bW1wIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQzMjMwMjEsImV4cCI6MjA4OTg5OTAyMX0.rUxl50XPC6HxjCNyd7HxEz24Dd_mSUbLIvl2uYP0PXE";
-
-  const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
   let contacts = [];
   let deals = [];
 
-  // Add contact locally and to Supabase
-  async function addContact() {
-    let name = document.getElementById('name').value;
-    let email = document.getElementById('email').value;
+  // Fetch data from Supabase
+  async function fetchData() {
+    // Fetch contacts
+    const contactRes = await fetch(`${SUPABASE_URL}/rest/v1/contacts?select=*`, {
+      headers: { 
+        apikey: SUPABASE_ANON_KEY,
+        Authorization: `Bearer ${SUPABASE_ANON_KEY}`,
+      }
+    });
+    contacts = await contactRes.json();
 
-    const { data, error } = await supabase.from('contacts').insert([{ name, email }]);
-    if (error) {
-      console.error("Error adding contact:", error);
-      alert("Error adding contact. Check console.");
-      return;
-    }
+    // Fetch deals
+    const dealRes = await fetch(`${SUPABASE_URL}/rest/v1/deals?select=*`, {
+      headers: { 
+        apikey: SUPABASE_ANON_KEY,
+        Authorization: `Bearer ${SUPABASE_ANON_KEY}`,
+      }
+    });
+    deals = (await dealRes.json()).map(d => ({ name: d.deal_name, stage: d.stage }));
 
-    contacts.push({ name, email });
     renderContacts();
-    document.getElementById('name').value = "";
-    document.getElementById('email').value = "";
+    renderDeals();
   }
 
   // Render contacts
   function renderContacts() {
-    let list = document.getElementById('contactList');
+    const list = document.getElementById('contactList');
     list.innerHTML = "";
     contacts.forEach(c => {
       list.innerHTML += `<div class="card">${c.name} - ${c.email}</div>`;
     });
   }
 
-  // Add deal locally and to Supabase
-  async function addDeal() {
-    let name = document.getElementById('dealName').value;
-
-    const { data, error } = await supabase.from('deals').insert([{ deal_name: name, stage: "Lead" }]);
-    if (error) {
-      console.error("Error adding deal:", error);
-      alert("Error adding deal. Check console.");
-      return;
-    }
-
-    deals.push({ name, stage: "Lead" });
-    renderDeals();
-    document.getElementById('dealName').value = "";
-  }
-
-  // Render deals in pipeline
+  // Render deals
   function renderDeals() {
     ["Lead","Qualified","Proposal","Negotiation","Closed"].forEach(stage => {
       document.getElementById(stage).innerHTML = "";
     });
-
     deals.forEach(d => {
-      let el = `<div class="deal">${d.name || d.deal_name}</div>`;
+      const el = `<div class="deal">${d.name}</div>`;
       document.getElementById(d.stage).innerHTML += el;
     });
   }
 
-  // Load data from Supabase on page load
-  async function loadData() {
-    const { data: contactData, error: contactError } = await supabase.from('contacts').select('*');
-    if (contactError) console.error(contactError);
-    else contacts = contactData || [];
+  // Add contact
+  async function addContact() {
+    const name = document.getElementById('name').value;
+    const email = document.getElementById('email').value;
 
-    const { data: dealData, error: dealError } = await supabase.from('deals').select('*');
-    if (dealError) console.error(dealError);
-    else deals = dealData.map(d => ({ name: d.deal_name, stage: d.stage })) || [];
+    const res = await fetch(`${SUPABASE_URL}/rest/v1/contacts`, {
+      method: 'POST',
+      headers: {
+        "apikey": SUPABASE_ANON_KEY,
+        "Authorization": `Bearer ${SUPABASE_ANON_KEY}`,
+        "Content-Type": "application/json",
+        "Prefer": "return=representation"
+      },
+      body: JSON.stringify([{ name, email }])
+    });
 
+    const newContact = await res.json();
+    contacts.push(...newContact);
     renderContacts();
-    renderDeals();
+    document.getElementById('name').value = "";
+    document.getElementById('email').value = "";
   }
 
-  window.onload = loadData;
+  // Add deal
+  async function addDeal() {
+    const name = document.getElementById('dealName').value;
+
+    const res = await fetch(`${SUPABASE_URL}/rest/v1/deals`, {
+      method: 'POST',
+      headers: {
+        "apikey": SUPABASE_ANON_KEY,
+        "Authorization": `Bearer ${SUPABASE_ANON_KEY}`,
+        "Content-Type": "application/json",
+        "Prefer": "return=representation"
+      },
+      body: JSON.stringify([{ deal_name: name, stage: "Lead" }])
+    });
+
+    const newDeal = await res.json();
+    deals.push(...newDeal.map(d => ({ name: d.deal_name, stage: d.stage })));
+    renderDeals();
+    document.getElementById('dealName').value = "";
+  }
+
+  window.onload = fetchData;
 </script>
 
 </body>
