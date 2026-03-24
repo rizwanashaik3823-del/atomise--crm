@@ -92,44 +92,88 @@
 
 </div>
 
+<!-- SUPABASE SCRIPT -->
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js"></script>
 <script>
+  // ✅ Supabase credentials
+  const SUPABASE_URL = "https://navwmcgyspmkaedpxmmp.supabase.co";
+  const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5hdndtY2d5c3Bta2FlZHB4bW1wIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQzMjMwMjEsImV4cCI6MjA4OTg5OTAyMX0.rUxl50XPC6HxjCNyd7HxEz24Dd_mSUbLIvl2uYP0PXE";
+
+  const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
   let contacts = [];
   let deals = [];
 
-  function addContact() {
+  // Add contact locally and to Supabase
+  async function addContact() {
     let name = document.getElementById('name').value;
     let email = document.getElementById('email').value;
 
+    const { data, error } = await supabase.from('contacts').insert([{ name, email }]);
+    if (error) {
+      console.error("Error adding contact:", error);
+      alert("Error adding contact. Check console.");
+      return;
+    }
+
     contacts.push({ name, email });
     renderContacts();
+    document.getElementById('name').value = "";
+    document.getElementById('email').value = "";
   }
 
+  // Render contacts
   function renderContacts() {
     let list = document.getElementById('contactList');
     list.innerHTML = "";
-
     contacts.forEach(c => {
       list.innerHTML += `<div class="card">${c.name} - ${c.email}</div>`;
     });
   }
 
-  function addDeal() {
+  // Add deal locally and to Supabase
+  async function addDeal() {
     let name = document.getElementById('dealName').value;
+
+    const { data, error } = await supabase.from('deals').insert([{ deal_name: name, stage: "Lead" }]);
+    if (error) {
+      console.error("Error adding deal:", error);
+      alert("Error adding deal. Check console.");
+      return;
+    }
 
     deals.push({ name, stage: "Lead" });
     renderDeals();
+    document.getElementById('dealName').value = "";
   }
 
+  // Render deals in pipeline
   function renderDeals() {
     ["Lead","Qualified","Proposal","Negotiation","Closed"].forEach(stage => {
       document.getElementById(stage).innerHTML = "";
     });
 
     deals.forEach(d => {
-      let el = `<div class="deal">${d.name}</div>`;
+      let el = `<div class="deal">${d.name || d.deal_name}</div>`;
       document.getElementById(d.stage).innerHTML += el;
     });
   }
+
+  // Load data from Supabase on page load
+  async function loadData() {
+    const { data: contactData, error: contactError } = await supabase.from('contacts').select('*');
+    if (contactError) console.error(contactError);
+    else contacts = contactData || [];
+
+    const { data: dealData, error: dealError } = await supabase.from('deals').select('*');
+    if (dealError) console.error(dealError);
+    else deals = dealData.map(d => ({ name: d.deal_name, stage: d.stage })) || [];
+
+    renderContacts();
+    renderDeals();
+  }
+
+  window.onload = loadData;
 </script>
 
 </body>
