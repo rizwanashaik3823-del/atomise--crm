@@ -9,50 +9,40 @@
       color: white;
       margin: 0;
     }
-
     h1 {
       text-align: center;
       background: #1e293b;
       padding: 15px;
     }
-
-    .container {
-      padding: 20px;
-    }
-
+    .container { padding: 20px; }
     input, button {
       padding: 10px;
       margin: 5px;
       border-radius: 5px;
       border: none;
     }
-
     button {
       background: purple;
       color: white;
       cursor: pointer;
     }
-
     .card {
       background: #1e293b;
       padding: 10px;
       margin: 10px 0;
       border-radius: 8px;
     }
-
     .pipeline {
       display: flex;
       gap: 10px;
       overflow-x: auto;
     }
-
     .column {
       background: #1e293b;
       padding: 10px;
       min-width: 200px;
       border-radius: 10px;
     }
-
     .deal {
       background: #334155;
       padding: 8px;
@@ -64,11 +54,10 @@
 
 <body>
 
-<h1>Atomise CRM</h1>
+<h1>Atomise CRM 🚀</h1>
 
 <div class="container">
 
-  <!-- CONTACTS -->
   <h2>Add Contact</h2>
   <input id="name" placeholder="Name">
   <input id="email" placeholder="Email">
@@ -77,7 +66,6 @@
   <h2>Contacts</h2>
   <div id="contactList"></div>
 
-  <!-- PIPELINE -->
   <h2>Deal Pipeline</h2>
   <input id="dealName" placeholder="Deal Name">
   <button onclick="addDeal()">Add Deal</button>
@@ -93,102 +81,90 @@
 </div>
 
 <script>
-  // ✅ Supabase REST info
-  const SUPABASE_URL = "https://navwmcgyspmkaedpxmmp.supabase.co";
-  const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5hdndtY2d5c3Bta2FlZHB4bW1wIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQzMjMwMjEsImV4cCI6MjA4OTg5OTAyMX0.rUxl50XPC6HxjCNyd7HxEz24Dd_mSUbLIvl2uYP0PXE";
+const SUPABASE_URL = "https://navwmcgyspmkaedpxmmp.supabase.co";
+const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5hdndtY2d5c3Bta2FlZHB4bW1wIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQzMjMwMjEsImV4cCI6MjA4OTg5OTAyMX0.rUxl50XPC6HxjCNyd7HxEz24Dd_mSUbLIvl2uYP0PXE";
 
-  let contacts = [];
-  let deals = [];
+let contacts = [];
+let deals = [];
 
-  // Fetch data from Supabase
-  async function fetchData() {
-    // Fetch contacts
-    const contactRes = await fetch(`${SUPABASE_URL}/rest/v1/contacts?select=*`, {
-      headers: { 
-        apikey: SUPABASE_ANON_KEY,
-        Authorization: `Bearer ${SUPABASE_ANON_KEY}`,
-      }
-    });
-    contacts = await contactRes.json();
+async function fetchData() {
+  const contactRes = await fetch(`${SUPABASE_URL}/rest/v1/contacts?select=*`, {
+    headers: {
+      apikey: SUPABASE_ANON_KEY,
+      Authorization: `Bearer ${SUPABASE_ANON_KEY}`,
+    }
+  });
+  contacts = await contactRes.json();
 
-    // Fetch deals
-    const dealRes = await fetch(`${SUPABASE_URL}/rest/v1/deals?select=*`, {
-      headers: { 
-        apikey: SUPABASE_ANON_KEY,
-        Authorization: `Bearer ${SUPABASE_ANON_KEY}`,
-      }
-    });
-    deals = (await dealRes.json()).map(d => ({ name: d.deal_name, stage: d.stage }));
+  const dealRes = await fetch(`${SUPABASE_URL}/rest/v1/deals?select=*`, {
+    headers: {
+      apikey: SUPABASE_ANON_KEY,
+      Authorization: `Bearer ${SUPABASE_ANON_KEY}`,
+    }
+  });
+  deals = (await dealRes.json()).map(d => ({ name: d.deal_name, stage: d.stage }));
 
-    renderContacts();
-    renderDeals();
-  }
+  renderContacts();
+  renderDeals();
+}
 
-  // Render contacts
-  function renderContacts() {
-    const list = document.getElementById('contactList');
-    list.innerHTML = "";
-    contacts.forEach(c => {
-      list.innerHTML += `<div class="card">${c.name} - ${c.email}</div>`;
-    });
-  }
+function renderContacts() {
+  const list = document.getElementById('contactList');
+  list.innerHTML = "";
+  contacts.forEach(c => {
+    list.innerHTML += `<div class="card">${c.name} - ${c.email}</div>`;
+  });
+}
 
-  // Render deals
-  function renderDeals() {
-    ["Lead","Qualified","Proposal","Negotiation","Closed"].forEach(stage => {
-      document.getElementById(stage).innerHTML = "";
-    });
-    deals.forEach(d => {
-      const el = `<div class="deal">${d.name}</div>`;
-      document.getElementById(d.stage).innerHTML += el;
-    });
-  }
+function renderDeals() {
+  ["Lead","Qualified","Proposal","Negotiation","Closed"].forEach(stage => {
+    document.getElementById(stage).innerHTML = "";
+  });
+  deals.forEach(d => {
+    document.getElementById(d.stage).innerHTML += `<div class="deal">${d.name}</div>`;
+  });
+}
 
-  // Add contact
-  async function addContact() {
-    const name = document.getElementById('name').value;
-    const email = document.getElementById('email').value;
+async function addContact() {
+  const name = document.getElementById('name').value;
+  const email = document.getElementById('email').value;
 
-    const res = await fetch(`${SUPABASE_URL}/rest/v1/contacts`, {
-      method: 'POST',
-      headers: {
-        "apikey": SUPABASE_ANON_KEY,
-        "Authorization": `Bearer ${SUPABASE_ANON_KEY}`,
-        "Content-Type": "application/json",
-        "Prefer": "return=representation"
-      },
-      body: JSON.stringify([{ name, email }])
-    });
+  const res = await fetch(`${SUPABASE_URL}/rest/v1/contacts`, {
+    method: 'POST',
+    headers: {
+      apikey: SUPABASE_ANON_KEY,
+      Authorization: `Bearer ${SUPABASE_ANON_KEY}`,
+      "Content-Type": "application/json",
+      "Prefer": "return=representation"
+    },
+    body: JSON.stringify([{ name, email }])
+  });
 
-    const newContact = await res.json();
-    contacts.push(...newContact);
-    renderContacts();
-    document.getElementById('name').value = "";
-    document.getElementById('email').value = "";
-  }
+  const newContact = await res.json();
+  contacts.push(...newContact);
+  renderContacts();
+}
 
-  // Add deal
-  async function addDeal() {
-    const name = document.getElementById('dealName').value;
+async function addDeal() {
+  const name = document.getElementById('dealName').value;
 
-    const res = await fetch(`${SUPABASE_URL}/rest/v1/deals`, {
-      method: 'POST',
-      headers: {
-        "apikey": SUPABASE_ANON_KEY,
-        "Authorization": `Bearer ${SUPABASE_ANON_KEY}`,
-        "Content-Type": "application/json",
-        "Prefer": "return=representation"
-      },
-      body: JSON.stringify([{ deal_name: name, stage: "Lead" }])
-    });
+  const res = await fetch(`${SUPABASE_URL}/rest/v1/deals`, {
+    method: 'POST',
+    headers: {
+      apikey: SUPABASE_ANON_KEY,
+      Authorization: `Bearer ${SUPABASE_ANON_KEY}`,
+      "Content-Type": "application/json",
+      "Prefer": "return=representation"
+    },
+    body: JSON.stringify([{ deal_name: name, stage: "Lead" }])
+  });
 
-    const newDeal = await res.json();
-    deals.push(...newDeal.map(d => ({ name: d.deal_name, stage: d.stage })));
-    renderDeals();
-    document.getElementById('dealName').value = "";
-  }
+  const newDeal = await res.json();
+  deals.push(...newDeal.map(d => ({ name: d.deal_name, stage: d.stage })));
+  renderDeals();
+}
 
-  window.onload = fetchData;
+window.onload = fetchData;
 </script>
 
 </body>
