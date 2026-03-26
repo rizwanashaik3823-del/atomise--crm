@@ -4,12 +4,28 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Atomise CRM</title>
+
   <style>
     body { font-family: Arial, sans-serif; padding: 20px; background-color: #f9f9f9; }
     h1 { margin-bottom: 20px; }
-    input, button { padding: 8px; margin-right: 5px; border-radius: 5px; border: 1px solid #ccc; }
-    #crm-deals { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 20px; }
-    .deal-card {
+
+    input, button {
+      padding: 8px;
+      margin: 5px;
+      border-radius: 5px;
+      border: 1px solid #ccc;
+    }
+
+    .section { margin-top: 30px; }
+
+    .grid {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin-top: 20px;
+    }
+
+    .card {
       border: 1px solid #ccc;
       padding: 10px;
       border-radius: 8px;
@@ -17,23 +33,38 @@
       background-color: #fff;
       box-shadow: 1px 1px 5px rgba(0,0,0,0.1);
     }
-    .deal-card h4 { margin: 0 0 5px 0; }
-    .deal-card p { margin: 0; font-size: 14px; color: #555; }
+
+    .card h4 { margin: 0 0 5px 0; }
+    .card p { margin: 0; font-size: 14px; color: #555; }
   </style>
 </head>
-<body>
-  <h1>Atomise CRM - Deals</h1>
 
-  <!-- Add New Deal Section -->
-  <div>
-    <input type="text" id="dealName" placeholder="Enter Deal Name" style="width:200px;" />
+<body>
+
+  <h1>Atomise CRM</h1>
+
+  <!-- DEALS SECTION -->
+  <div class="section">
+    <h2>Deals</h2>
+
+    <input type="text" id="dealName" placeholder="Enter Deal Name" />
     <button id="addDealBtn">Add Deal</button>
+
+    <div id="crm-deals" class="grid"></div>
   </div>
 
-  <!-- Deals will appear here -->
-  <div id="crm-deals"></div>
+  <!-- CONTACTS SECTION -->
+  <div class="section">
+    <h2>Contacts</h2>
 
-  <!-- Supabase + CRM Script -->
+    <input type="text" id="contactName" placeholder="Name" />
+    <input type="email" id="contactEmail" placeholder="Email" />
+    <input type="text" id="contactPhone" placeholder="Phone" />
+    <button id="addContactBtn">Add Contact</button>
+
+    <div id="contacts-list" class="grid"></div>
+  </div>
+
   <script type="module">
     import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm'
 
@@ -42,58 +73,104 @@
 
     const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
-    const container = document.getElementById('crm-deals');
+    // ---------------- DEALS ----------------
+    const dealContainer = document.getElementById('crm-deals');
     const dealInput = document.getElementById('dealName');
-    const addBtn = document.getElementById('addDealBtn');
+    const addDealBtn = document.getElementById('addDealBtn');
 
-    // Fetch and display deals
     async function fetchDeals() {
       const { data, error } = await supabase
         .from('deals')
         .select('*')
         .order('id', { ascending: true });
 
-      if (error) {
-        console.error('Error fetching deals:', error);
-        return;
-      }
+      if (error) return console.error(error);
 
-      container.innerHTML = '';
+      dealContainer.innerHTML = '';
+
       data.forEach(deal => {
         const card = document.createElement('div');
-        card.className = 'deal-card';
+        card.className = 'card';
         card.innerHTML = `
           <h4>${deal.deal_name}</h4>
           <p>Stage: ${deal.stage || 'New'}</p>
         `;
-        container.appendChild(card);
+        dealContainer.appendChild(card);
       });
     }
 
-    // Add a new deal
     async function addDeal() {
-      const dealName = dealInput.value.trim();
-      if (!dealName) return alert('Please enter a deal name.');
+      const name = dealInput.value.trim();
+      if (!name) return alert('Enter deal name');
 
       const { error } = await supabase
         .from('deals')
-        .insert([{ deal_name: dealName, stage: 'New' }]);
+        .insert([{ deal_name: name, stage: 'New' }]);
 
-      if (error) {
-        console.error('Error adding deal:', error);
-        return alert('Failed to add deal.');
-      }
+      if (error) return alert('Error adding deal');
 
       dealInput.value = '';
       fetchDeals();
     }
 
-    // Event listeners
-    addBtn.addEventListener('click', addDeal);
-    dealInput.addEventListener('keyup', (e) => { if (e.key === 'Enter') addDeal(); });
+    addDealBtn.addEventListener('click', addDeal);
 
-    // Load deals on page load
+    // ---------------- CONTACTS ----------------
+    const contactContainer = document.getElementById('contacts-list');
+    const nameInput = document.getElementById('contactName');
+    const emailInput = document.getElementById('contactEmail');
+    const phoneInput = document.getElementById('contactPhone');
+    const addContactBtn = document.getElementById('addContactBtn');
+
+    async function fetchContacts() {
+      const { data, error } = await supabase
+        .from('contacts')
+        .select('*')
+        .order('id', { ascending: true });
+
+      if (error) return console.error(error);
+
+      contactContainer.innerHTML = '';
+
+      data.forEach(contact => {
+        const card = document.createElement('div');
+        card.className = 'card';
+        card.innerHTML = `
+          <h4>${contact.name}</h4>
+          <p>${contact.email}</p>
+          <p>${contact.phone}</p>
+        `;
+        contactContainer.appendChild(card);
+      });
+    }
+
+    async function addContact() {
+      const name = nameInput.value.trim();
+      const email = emailInput.value.trim();
+      const phone = phoneInput.value.trim();
+
+      if (!name) return alert('Enter name');
+
+      const { error } = await supabase
+        .from('contacts')
+        .insert([{ name, email, phone }]);
+
+      if (error) return alert('Error adding contact');
+
+      nameInput.value = '';
+      emailInput.value = '';
+      phoneInput.value = '';
+
+      fetchContacts();
+    }
+
+    addContactBtn.addEventListener('click', addContact);
+
+    // ---------------- LOAD ----------------
     fetchDeals();
+    fetchContacts();
+
   </script>
+
 </body>
 </html>
