@@ -40,7 +40,7 @@
 
 <input id="dealName" placeholder="Deal Name">
 <select id="contactSelect"></select>
-<button id="addDealBtn">Add Deal</button>
+<button onclick="addDeal()">Add Deal</button>
 
 <div id="crm-deals" class="grid"></div>
 
@@ -52,7 +52,7 @@
 <input id="contactName" placeholder="Name">
 <input id="contactEmail" placeholder="Email">
 <input id="contactPhone" placeholder="Phone">
-<button id="addContactBtn">Add Contact</button>
+<button onclick="addContact()">Add Contact</button>
 
 <div id="contacts-list" class="grid"></div>
 
@@ -64,74 +64,51 @@ const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBh
 
 const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
-// ---------- DEALS ----------
-const dealContainer = document.getElementById('crm-deals');
-const dealInput = document.getElementById('dealName');
+// ---------- GLOBAL DATA ----------
+let allContacts = [];
 
-async function fetchDeals() {
-  const { data, error } = await supabase
-    .from('deals')
-    .select('*, contacts(name)')
-    .order('id', { ascending: true });
-
-  if (error) return console.error(error);
-
-  dealContainer.innerHTML = '';
-
-  data.forEach(deal => {
-    const card = document.createElement('div');
-    card.className = 'card';
-
-    card.innerHTML = `
-      <h4>${deal.deal_name}</h4>
-      <p>Stage: ${deal.stage}</p>
-      <p>Contact: ${deal.contacts?.name || 'No Contact'}</p>
-    `;
-
-    dealContainer.appendChild(card);
-  });
-}
-
-async function addDeal() {
-  const name = dealInput.value.trim();
-  const contactId = document.getElementById('contactSelect').value;
-
-  if (!name) return alert('Enter deal name');
-
-  const { error } = await supabase
-    .from('deals')
-    .insert([{ deal_name: name, stage: 'Lead', contact_id: contactId }]);
-
-  if (error) return alert('Error adding deal');
-
-  dealInput.value = '';
-  fetchDeals();
-}
-
-document.getElementById('addDealBtn').addEventListener('click', addDeal);
-
-// ---------- CONTACTS ----------
-const contactContainer = document.getElementById('contacts-list');
-
+// ---------- LOAD CONTACTS ----------
 async function fetchContacts() {
-  const { data } = await supabase.from('contacts').select('*');
+  const { data, error } = await supabase.from('contacts').select('*');
 
-  contactContainer.innerHTML = '';
+  if (error) {
+    console.error(error);
+    return;
+  }
+
+  allContacts = data;
+
+  const container = document.getElementById('contacts-list');
+  container.innerHTML = '';
 
   data.forEach(contact => {
-    const card = document.createElement('div');
-    card.className = 'card';
-
-    card.innerHTML = `
+    const div = document.createElement('div');
+    div.className = 'card';
+    div.innerHTML = `
       <h4>${contact.name}</h4>
       <p>${contact.email}</p>
       <p>${contact.phone}</p>
     `;
+    container.appendChild(div);
+  });
 
-    contactContainer.appendChild(card);
+  loadDropdown();
+}
+
+// ---------- DROPDOWN ----------
+function loadDropdown() {
+  const dropdown = document.getElementById('contactSelect');
+  dropdown.innerHTML = '<option value="">Select Contact</option>';
+
+  allContacts.forEach(contact => {
+    const option = document.createElement('option');
+    option.value = contact.id;
+    option.textContent = contact.name;
+    dropdown.appendChild(option);
   });
 }
 
+// ---------- ADD CONTACT ----------
 async function addContact() {
   const name = document.getElementById('contactName').value.trim();
   const email = document.getElementById('contactEmail').value.trim();
@@ -150,30 +127,68 @@ async function addContact() {
   document.getElementById('contactPhone').value = '';
 
   fetchContacts();
-  loadDropdown();
 }
 
-document.getElementById('addContactBtn').addEventListener('click', addContact);
+// ---------- LOAD DEALS ----------
+async function fetchDeals() {
+  const { data, error } = await supabase
+    .from('deals')
+    .select('*')
+    .order('id', { ascending: true });
 
-// ---------- DROPDOWN ----------
-async function loadDropdown() {
-  const { data } = await supabase.from('contacts').select('*');
+  if (error) {
+    console.error(error);
+    return;
+  }
 
-  const dropdown = document.getElementById('contactSelect');
-  dropdown.innerHTML = '<option value="">Select Contact</option>';
+  const container = document.getElementById('crm-deals');
+  container.innerHTML = '';
 
-  data.forEach(contact => {
-    const option = document.createElement('option');
-    option.value = contact.id;
-    option.textContent = contact.name;
-    dropdown.appendChild(option);
+  data.forEach(deal => {
+    const contact = allContacts.find(c => c.id === deal.contact_id);
+
+    const div = document.createElement('div');
+    div.className = 'card';
+
+    div.innerHTML = `
+      <h4>${deal.deal_name}</h4>
+      <p>Stage: ${deal.stage}</p>
+      <p>Contact: ${contact ? contact.name : 'No Contact'}</p>
+    `;
+
+    container.appendChild(div);
   });
 }
 
-// ---------- LOAD ----------
-fetchDeals();
-fetchContacts();
-loadDropdown();
+// ---------- ADD DEAL ----------
+async function addDeal() {
+  const name = document.getElementById('dealName').value.trim();
+  const contactId = document.getElementById('contactSelect').value;
+
+  if (!name) return alert('Enter deal name');
+
+  const { error } = await supabase
+    .from('deals')
+    .insert([{
+      deal_name: name,
+      stage: 'Lead',
+      contact_id: contactId || null
+    }]);
+
+  if (error) return alert('Error adding deal');
+
+  document.getElementById('dealName').value = '';
+
+  fetchDeals();
+}
+
+// ---------- INITIAL LOAD ----------
+async function init() {
+  await fetchContacts();
+  await fetchDeals();
+}
+
+init();
 
 </script>
 
