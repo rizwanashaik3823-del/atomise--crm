@@ -2,21 +2,17 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Atomise CRM</title>
 
   <style>
-    body { font-family: Arial, sans-serif; padding: 20px; background-color: #f9f9f9; }
-    h1 { margin-bottom: 20px; }
+    body { font-family: Arial; padding: 20px; background: #f9f9f9; }
 
-    input, button {
+    input, select, button {
       padding: 8px;
       margin: 5px;
       border-radius: 5px;
       border: 1px solid #ccc;
     }
-
-    .section { margin-top: 30px; }
 
     .grid {
       display: flex;
@@ -26,151 +22,160 @@
     }
 
     .card {
-      border: 1px solid #ccc;
-      padding: 10px;
-      border-radius: 8px;
       width: 200px;
-      background-color: #fff;
-      box-shadow: 1px 1px 5px rgba(0,0,0,0.1);
+      padding: 10px;
+      border: 1px solid #ccc;
+      border-radius: 8px;
+      background: #fff;
     }
-
-    .card h4 { margin: 0 0 5px 0; }
-    .card p { margin: 0; font-size: 14px; color: #555; }
   </style>
 </head>
 
 <body>
 
-  <h1>Atomise CRM</h1>
+<h1>Atomise CRM</h1>
 
-  <!-- DEALS SECTION -->
-  <div class="section">
-    <h2>Deals</h2>
+<!-- DEALS -->
+<h2>Deals</h2>
 
-    <input type="text" id="dealName" placeholder="Enter Deal Name" />
-    <button id="addDealBtn">Add Deal</button>
+<input id="dealName" placeholder="Deal Name">
+<select id="contactSelect"></select>
+<button id="addDealBtn">Add Deal</button>
 
-    <div id="crm-deals" class="grid"></div>
-  </div>
+<div id="crm-deals" class="grid"></div>
 
-  <!-- CONTACTS SECTION -->
-  <div class="section">
-    <h2>Contacts</h2>
+<hr>
 
-    <input type="text" id="contactName" placeholder="Name" />
-    <input type="email" id="contactEmail" placeholder="Email" />
-    <input type="text" id="contactPhone" placeholder="Phone" />
-    <button id="addContactBtn">Add Contact</button>
+<!-- CONTACTS -->
+<h2>Contacts</h2>
 
-    <div id="contacts-list" class="grid"></div>
-  </div>
+<input id="contactName" placeholder="Name">
+<input id="contactEmail" placeholder="Email">
+<input id="contactPhone" placeholder="Phone">
+<button id="addContactBtn">Add Contact</button>
 
-  <script type="module">
-    import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm'
+<div id="contacts-list" class="grid"></div>
 
-    const SUPABASE_URL = "https://navwmcgyspmkaedpxmmp.supabase.co";
-    const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5hdndtY2d5c3Bta2FlZHB4bW1wIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQzMjMwMjEsImV4cCI6MjA4OTg5OTAyMX0.rUxl50XPC6HxjCNyd7HxEz24Dd_mSUbLIvl2uYP0PXE";
+<script type="module">
+import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm'
 
-    const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+const SUPABASE_URL = "https://navwmcgyspmkaedpxmmp.supabase.co";
+const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5hdndtY2d5c3Bta2FlZHB4bW1wIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQzMjMwMjEsImV4cCI6MjA4OTg5OTAyMX0.rUxl50XPC6HxjCNyd7HxEz24Dd_mSUbLIvl2uYP0PXE";
 
-    // ---------------- DEALS ----------------
-    const dealContainer = document.getElementById('crm-deals');
-    const dealInput = document.getElementById('dealName');
-    const addDealBtn = document.getElementById('addDealBtn');
+const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
-    async function fetchDeals() {
-      const { data, error } = await supabase
-        .from('deals')
-        .select('*')
-        .order('id', { ascending: true });
+// ---------- DEALS ----------
+const dealContainer = document.getElementById('crm-deals');
+const dealInput = document.getElementById('dealName');
 
-      if (error) return console.error(error);
+async function fetchDeals() {
+  const { data, error } = await supabase
+    .from('deals')
+    .select('*, contacts(name)')
+    .order('id', { ascending: true });
 
-      dealContainer.innerHTML = '';
+  if (error) return console.error(error);
 
-      data.forEach(deal => {
-        const card = document.createElement('div');
-        card.className = 'card';
-        card.innerHTML = `
-          <h4>${deal.deal_name}</h4>
-          <p>Stage: ${deal.stage || 'New'}</p>
-        `;
-        dealContainer.appendChild(card);
-      });
-    }
+  dealContainer.innerHTML = '';
 
-    async function addDeal() {
-      const name = dealInput.value.trim();
-      if (!name) return alert('Enter deal name');
+  data.forEach(deal => {
+    const card = document.createElement('div');
+    card.className = 'card';
 
-      const { error } = await supabase
-        .from('deals')
-        .insert([{ deal_name: name, stage: 'New' }]);
+    card.innerHTML = `
+      <h4>${deal.deal_name}</h4>
+      <p>Stage: ${deal.stage}</p>
+      <p>Contact: ${deal.contacts?.name || 'No Contact'}</p>
+    `;
 
-      if (error) return alert('Error adding deal');
+    dealContainer.appendChild(card);
+  });
+}
 
-      dealInput.value = '';
-      fetchDeals();
-    }
+async function addDeal() {
+  const name = dealInput.value.trim();
+  const contactId = document.getElementById('contactSelect').value;
 
-    addDealBtn.addEventListener('click', addDeal);
+  if (!name) return alert('Enter deal name');
 
-    // ---------------- CONTACTS ----------------
-    const contactContainer = document.getElementById('contacts-list');
-    const nameInput = document.getElementById('contactName');
-    const emailInput = document.getElementById('contactEmail');
-    const phoneInput = document.getElementById('contactPhone');
-    const addContactBtn = document.getElementById('addContactBtn');
+  const { error } = await supabase
+    .from('deals')
+    .insert([{ deal_name: name, stage: 'Lead', contact_id: contactId }]);
 
-    async function fetchContacts() {
-      const { data, error } = await supabase
-        .from('contacts')
-        .select('*')
-        .order('id', { ascending: true });
+  if (error) return alert('Error adding deal');
 
-      if (error) return console.error(error);
+  dealInput.value = '';
+  fetchDeals();
+}
 
-      contactContainer.innerHTML = '';
+document.getElementById('addDealBtn').addEventListener('click', addDeal);
 
-      data.forEach(contact => {
-        const card = document.createElement('div');
-        card.className = 'card';
-        card.innerHTML = `
-          <h4>${contact.name}</h4>
-          <p>${contact.email}</p>
-          <p>${contact.phone}</p>
-        `;
-        contactContainer.appendChild(card);
-      });
-    }
+// ---------- CONTACTS ----------
+const contactContainer = document.getElementById('contacts-list');
 
-    async function addContact() {
-      const name = nameInput.value.trim();
-      const email = emailInput.value.trim();
-      const phone = phoneInput.value.trim();
+async function fetchContacts() {
+  const { data } = await supabase.from('contacts').select('*');
 
-      if (!name) return alert('Enter name');
+  contactContainer.innerHTML = '';
 
-      const { error } = await supabase
-        .from('contacts')
-        .insert([{ name, email, phone }]);
+  data.forEach(contact => {
+    const card = document.createElement('div');
+    card.className = 'card';
 
-      if (error) return alert('Error adding contact');
+    card.innerHTML = `
+      <h4>${contact.name}</h4>
+      <p>${contact.email}</p>
+      <p>${contact.phone}</p>
+    `;
 
-      nameInput.value = '';
-      emailInput.value = '';
-      phoneInput.value = '';
+    contactContainer.appendChild(card);
+  });
+}
 
-      fetchContacts();
-    }
+async function addContact() {
+  const name = document.getElementById('contactName').value.trim();
+  const email = document.getElementById('contactEmail').value.trim();
+  const phone = document.getElementById('contactPhone').value.trim();
 
-    addContactBtn.addEventListener('click', addContact);
+  if (!name) return alert('Enter name');
 
-    // ---------------- LOAD ----------------
-    fetchDeals();
-    fetchContacts();
+  const { error } = await supabase
+    .from('contacts')
+    .insert([{ name, email, phone }]);
 
-  </script>
+  if (error) return alert('Error adding contact');
+
+  document.getElementById('contactName').value = '';
+  document.getElementById('contactEmail').value = '';
+  document.getElementById('contactPhone').value = '';
+
+  fetchContacts();
+  loadDropdown();
+}
+
+document.getElementById('addContactBtn').addEventListener('click', addContact);
+
+// ---------- DROPDOWN ----------
+async function loadDropdown() {
+  const { data } = await supabase.from('contacts').select('*');
+
+  const dropdown = document.getElementById('contactSelect');
+  dropdown.innerHTML = '<option value="">Select Contact</option>';
+
+  data.forEach(contact => {
+    const option = document.createElement('option');
+    option.value = contact.id;
+    option.textContent = contact.name;
+    dropdown.appendChild(option);
+  });
+}
+
+// ---------- LOAD ----------
+fetchDeals();
+fetchContacts();
+loadDropdown();
+
+</script>
 
 </body>
 </html>
